@@ -1,6 +1,6 @@
 # fraud-detection-capstone
 
-This is our final-year capstone project focused on detecting fraudulent credit card transactions using advanced machine learning techniques. We tackle the **class imbalance problem** using resampling and cost-sensitive learning, and compare various models to find the most effective fraud detection strategy.
+This is our final-year capstone project focused on detecting fraudulent credit card transactions using advanced machine learning techniques. We tackle the **class imbalance problem**, and compare various **models** to find the most effective fraud detection strategy.
 
 ---
 
@@ -17,7 +17,7 @@ This is our final-year capstone project focused on detecting fraudulent credit c
 ```
 credit-card-fraud-detection/
 ├── data/                  # Raw and cleaned datasets
-├── notebooks/             # Data exploration and preprocessing (Jupyter)
+├── notebooks/             # Data exploration and preprocessing 
 ├── src/                   # Model scripts, training code, evaluation metrics
 ├── results/               # Confusion matrices, ROC curves, model scores
 ├── requirements.txt       # Python libraries needed to run the project
