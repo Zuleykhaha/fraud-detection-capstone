@@ -20,8 +20,6 @@ credit-card-fraud-detection/
 ├── notebooks/             # Data exploration and preprocessing 
 ├── src/                   # Model scripts, training code, evaluation metrics
 ├── results/               # Confusion matrices, ROC curves, model scores
-├── requirements.txt       # Python libraries needed to run the project
-├── .gitignore             # Files ignored by Git
 └── README.md              # This file
 ```
 
