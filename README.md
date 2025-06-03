@@ -18,7 +18,6 @@ This is our final-year capstone project focused on detecting fraudulent credit c
 credit-card-fraud-detection/
 ├── data/                  # Raw and cleaned datasets
 ├── notebooks/             # Data exploration and preprocessing 
-├── src/                   # Model scripts, training code, evaluation metrics
 ├── results/               # Confusion matrices, ROC curves, model scores
 └── README.md              # This file
 ```
@@ -37,7 +36,7 @@ credit-card-fraud-detection/
 ## 📌 Notes
 
 - All preprocessing steps are documented in `notebooks/preprocessing.ipynb`.
-- Final cleaned dataset saved as `train_data_smote.csv`.
+- Final cleaned dataset saved as `train_data_smote_tomek.csv`.
 
 ---
 
