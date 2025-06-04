@@ -27,7 +27,7 @@ credit-card-fraud-detection/
 ## 📊 Dataset
 
 - **Name:** Synthetic Credit Card Fraud Detection Dataset
-- **Source:** [Kaggle - by DHANUSH NARAYANAN R](https://www.kaggle.com/datasets/dhanushnarayananr/synthetic-credit-card-transactions)
+- **Source:** https://www.kaggle.com/datasets/dhanushnarayananr/credit-card-fraud
 - **File used:** `card_transdata.csv`
 - Contains anonymized transaction data with class imbalance between normal and fraudulent transactions.
 
