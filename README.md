@@ -16,9 +16,8 @@ This is our final-year capstone project focused on detecting fraudulent credit c
 
 ```
 credit-card-fraud-detection/
-├── data/                  # Raw and cleaned datasets
-├── notebooks/             # Data exploration and preprocessing 
-├── results/               # Confusion matrices, ROC curves, model scores
+├── notebooks/             # Data preprocessing 
+├── results/               # models
 └── README.md              # This file
 ```
 
