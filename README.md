@@ -35,7 +35,7 @@ credit-card-fraud-detection/
 ## 📌 Notes
 
 - All preprocessing steps are documented in `notebooks/preprocessing.ipynb`.
-- Final cleaned dataset saved as `train_data_smote_tomek.csv`.
+- 
 
 ---
 
