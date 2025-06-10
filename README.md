@@ -7,8 +7,8 @@ This is our final-year capstone project focused on detecting fraudulent credit c
 ## 👥 Team Members
 
 - Zuleykha Salahova
-- [Teammate 1]
-- [Teammate 2]
+- Abdurrahman Begovic 
+- Marah Hasan
   
 ---
 
