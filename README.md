@@ -2,11 +2,11 @@ I used Robust Scaler as a data normlazation method; it is a better appraoch than
 
 To clone this code, run:
 
-git clone --single-branch --branch preprocessing_v3 https://github.com/Zuleykhaha/fraud-detection-capstone.git , if you haven't cloned anything from this repositry yet.
+'git clone --single-branch --branch preprocessing_v3 https://github.com/Zuleykhaha/fraud-detection-capstone.git' , if you haven't cloned anything from this repositry yet.
 
 If you have cloned this repositry, then run:
-git fetch origin preprocessing_v3
-git switch preprocessing_v3
+'git fetch origin preprocessing_v3',
+'git switch preprocessing_v3'
 
 Note: I used os path and based it on a structure I created on my machine, but the data file on my machine was too large to upload to GitHub so to run the code download the CSV file from main repositry
 and define the paths as needed. Additionally, I added folders inside the project to help organize the files. The main code can be found under 'scripts' and its named preprocessing.ipynb, a Jupyter file.
