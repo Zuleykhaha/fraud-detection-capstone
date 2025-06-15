@@ -1,0 +1,40 @@
+# Data
+data/
+*.csv
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# VSCode settings
+.vscode/
+
+# Model files
+*.h5
+*.hdf5
+*.pkl
+*.joblib
+*.sav
+*.pt
+*.pth
+
+# Logs
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
