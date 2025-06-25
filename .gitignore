@@ -20,9 +20,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# VSCode settings
-.vscode/
-
 # Model files
 *.h5
 *.hdf5
@@ -35,6 +32,10 @@ venv.bak/
 # Logs
 *.log
 
-# System files
+# System files/VSCode settings
+.vscode/
 .DS_Store
 Thumbs.db
+
+# Node
+node_modules/
