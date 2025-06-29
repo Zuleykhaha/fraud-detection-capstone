@@ -4,3 +4,4 @@ numpy
 imblearn
 ipykernel
 scipy
+xgboost
