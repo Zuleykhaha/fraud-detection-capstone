@@ -8,3 +8,16 @@ class Transaction(BaseModel):
     used_chip: bool
     used_pin_number: bool
     online_order: bool
+    fraud: bool
+
+class Result(BaseModel):
+    brf: bool
+    iso: bool
+    lr: bool
+    true: bool
+
+class TestSummary(BaseModel):
+    model: str
+    accuracy: float = 0.0
+    missed_frauds: int = 0
+    false_positives: int = 0
