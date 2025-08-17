@@ -54,8 +54,8 @@ def main() -> None:
         return
     
     train_df, test_df = split_data(df)
-    train_df = scale_data(train_df)
-    test_df = scale_data(test_df)
+    # train_df = scale_data(train_df)
+    # test_df = scale_data(test_df)
 
     ad_train_df = train_df.copy()
     brf_train_df = balance_data(train_df)
