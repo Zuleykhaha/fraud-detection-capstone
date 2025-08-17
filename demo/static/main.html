@@ -52,7 +52,19 @@
             try {
                 const response = await fetch('/test', { method: 'POST' });
                 const data = await response.json();
-                document.getElementById('results').textContent = JSON.stringify(data, null, 2);
+                const modelNames = {
+                    brf: "Balanced Random Forest",
+                    iso: "Isolated Forest",
+                    lr: "Logistic Regression"
+                };
+                let resultsHtml = "<strong>Full Test Results:</strong><br><br>";
+                data.forEach(result => {
+                    resultsHtml += `<strong>${modelNames[result.model] || result.model}:</strong><br>`;
+                    resultsHtml += `Accuracy: ${(result.accuracy * 100).toFixed(2)}%<br>`;
+                    resultsHtml += `Missed Frauds: ${result.missed_frauds}<br>`;
+                    resultsHtml += `False Positives: ${result.false_positives}<br><br>`;
+                });
+                document.getElementById('results').innerHTML = resultsHtml;
             } catch (err) {
                 document.getElementById('results').textContent = 'Error: ' + err;
             }

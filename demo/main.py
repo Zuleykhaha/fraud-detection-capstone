@@ -66,7 +66,7 @@ def ingest_transaction(transaction: Transaction):
 
     data = pd.DataFrame([transaction.model_dump(exclude={"fraud"})])
 
-    brf_pred = brf.predict(data.drop(columns=["repeat_retailer", "ratio_to_median_purchase_price"]))
+    brf_pred = brf.predict(data)
     iso_pred = iso.predict(data)
     lr_pred = lr.predict(data)
 
@@ -88,10 +88,7 @@ def test_models():
     X = df.drop(columns=["fraud"])
     y = df["fraud"]
 
-    # For brf, drop columns as in ingest_transaction
-    X_brf = X.drop(columns=["repeat_retailer", "ratio_to_median_purchase_price"])
-
-    brf_pred = brf.predict(X_brf)
+    brf_pred = brf.predict(X)
     iso_pred = iso.predict(X)
     lr_pred = lr.predict(X)
 
