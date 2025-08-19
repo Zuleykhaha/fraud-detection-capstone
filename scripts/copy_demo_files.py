@@ -15,7 +15,7 @@ for filename in os.listdir(src_dir):
         shutil.copy(src_path, dst_path)
         print(f"Copied: {filename}")
 
-src_file = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'testing', 'final_full_testing.csv'))
+src_file = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'testing', 'unscaled_testing.csv'))
 dst_dir2 = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'demo', 'data'))
 
 os.makedirs(dst_dir2, exist_ok=True)

@@ -20,4 +20,5 @@ class TestSummary(BaseModel):
     model: str
     accuracy: float = 0.0
     missed_frauds: int = 0
+    miss_percentage: float = 0.0
     false_positives: int = 0

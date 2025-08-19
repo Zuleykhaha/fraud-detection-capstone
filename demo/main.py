@@ -3,6 +3,7 @@ from typing import List
 
 import joblib
 import pandas as pd
+from sklearn.preprocessing import RobustScaler
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -25,9 +26,11 @@ async def lifespan(app: FastAPI):
     brf, iso, lr = load_models()
     app.state.models = {"brf": brf, "iso": iso, "lr": lr}
     app.state.test_data = load_test_data()
+    app.state.scaler = joblib.load(os.path.join(os.getcwd(), "models", "scaler.joblib"))
     yield
     app.state.models = None
     app.state.test_data = None
+    app.state.scaler = None
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -63,12 +66,22 @@ def ingest_transaction(transaction: Transaction):
     brf = app.state.models["brf"]
     iso = app.state.models["iso"]
     lr = app.state.models["lr"]
+    scaler = app.state.scaler
 
     data = pd.DataFrame([transaction.model_dump(exclude={"fraud"})])
 
-    brf_pred = brf.predict(data)
-    iso_pred = iso.predict(data)
-    lr_pred = lr.predict(data)
+    feature_order = getattr(scaler, "feature_names_in_", None)
+    if feature_order is not None:
+        missing = set(feature_order) - set(data.columns)
+        if missing:
+            raise ValueError(f"Missing features in test set: {sorted(missing)}")
+        data = data.reindex(columns=feature_order)
+
+    data = scaler.transform(data)
+
+    brf_pred = int(brf.predict(data)[0])
+    iso_pred = int(iso.predict(data)[0] == -1)
+    lr_pred = int(lr.predict(data)[0])
 
     return Result(
         brf=bool(brf_pred),
@@ -84,23 +97,35 @@ def test_models():
     brf = app.state.models["brf"]
     iso = app.state.models["iso"]
     lr = app.state.models["lr"]
+    scaler = app.state.scaler
 
     X = df.drop(columns=["fraud"])
-    y = df["fraud"]
+    y = df["fraud"].to_numpy()
 
-    brf_pred = brf.predict(X)
-    iso_pred = iso.predict(X)
-    lr_pred = lr.predict(X)
+    feature_order = getattr(scaler, "feature_names_in_", None)
+    if feature_order is not None:
+        missing = set(feature_order) - set(X.columns)
+        if missing:
+            raise ValueError(f"Missing features in test set: {sorted(missing)}")
+        X = X.reindex(columns=feature_order)
+
+    X = scaler.transform(X)
+
+    brf_pred = brf.predict(X).astype(int)
+    iso_pred = int(iso.predict(X)[0] == -1)
+    lr_pred = lr.predict(X).astype(int)
 
     summaries = []
-    for model_name, preds in zip(["brf", "iso", "lr"], [brf_pred, iso_pred, lr_pred]):
-        accuracy = (preds == y).mean()
-        false_positives = ((preds == 1) & (y == 0)).sum()
-        missed_frauds = ((preds == 0) & (y == 1)).sum()
+    for model_name, preds in [("brf", brf_pred), ("iso", iso_pred), ("lr", lr_pred)]:
+        accuracy = float((preds == y).mean())
+        false_positives = int(((preds == 1) & (y == 0)).sum())
+        missed_frauds = int(((preds == 0) & (y == 1)).sum())
+        miss_percentage = float(missed_frauds) / y.sum() if y.sum() > 0 else 0.0
         summaries.append(TestSummary(
             model=model_name,
             accuracy=accuracy,
             false_positives=false_positives,
-            missed_frauds=missed_frauds
+            missed_frauds=missed_frauds,
+            miss_percentage=miss_percentage
         ))
     return summaries

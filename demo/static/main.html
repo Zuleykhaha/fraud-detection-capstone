@@ -33,7 +33,7 @@
                 // data: { brf: bool, iso: bool, lr: bool, true: bool }
                 const modelNames = {
                     brf: "Balanced Random Forest",
-                    iso: "Isolated Forest",
+                    iso: "Isolation Forest",
                     lr: "Logistic Regression"
                 };
                 let resultsHtml = `<strong>True label:</strong> ${data.true ? "Fraudulent" : "Legit"}<br><br>`;
@@ -54,7 +54,7 @@
                 const data = await response.json();
                 const modelNames = {
                     brf: "Balanced Random Forest",
-                    iso: "Isolated Forest",
+                    iso: "Isolation Forest",
                     lr: "Logistic Regression"
                 };
                 let resultsHtml = "<strong>Full Test Results:</strong><br><br>";
@@ -62,6 +62,7 @@
                     resultsHtml += `<strong>${modelNames[result.model] || result.model}:</strong><br>`;
                     resultsHtml += `Accuracy: ${(result.accuracy * 100).toFixed(2)}%<br>`;
                     resultsHtml += `Missed Frauds: ${result.missed_frauds}<br>`;
+                    resultsHtml += `Miss Percentage: ${(result.miss_percentage * 100).toFixed(2)}%<br>`;
                     resultsHtml += `False Positives: ${result.false_positives}<br><br>`;
                 });
                 document.getElementById('results').innerHTML = resultsHtml;
