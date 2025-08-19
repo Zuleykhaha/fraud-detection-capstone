@@ -55,6 +55,11 @@ def main() -> None:
     os.makedirs(out_dir_results, exist_ok=True)
 
     train_df, test_df = split_data(df)
+    feature_order = train_df.columns.tolist()
+    with open(os.path.join(out_dir_results, "feature_order.txt"), "w") as f:
+        for feature in feature_order:
+            f.write(f"{feature}\n")
+            
     scaler = RobustScaler()
     train_y = train_df["fraud"].values
     train_df = pd.DataFrame(scaler.fit_transform(train_df.drop(columns=["fraud"])), columns=train_df.columns[:-1])

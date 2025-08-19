@@ -4,6 +4,9 @@ import shutil
 src_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results'))
 dst_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'demo', 'models'))
 
+src_file = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'testing', 'unscaled_testing.csv'))
+dst_dir2 = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'demo', 'data'))
+
 os.makedirs(dst_dir, exist_ok=True)
 
 for filename in os.listdir(src_dir):
@@ -14,9 +17,13 @@ for filename in os.listdir(src_dir):
             os.remove(dst_path)
         shutil.copy(src_path, dst_path)
         print(f"Copied: {filename}")
-
-src_file = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'testing', 'unscaled_testing.csv'))
-dst_dir2 = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'demo', 'data'))
+    elif filename.endswith('.txt'):
+        src_path = os.path.join(src_dir, filename)
+        dst_path = os.path.join(dst_dir2, filename)
+        if os.path.exists(dst_path):
+            os.remove(dst_path)
+        shutil.copy(src_path, dst_path)
+        print(f"Copied: {filename}")
 
 os.makedirs(dst_dir2, exist_ok=True)
 

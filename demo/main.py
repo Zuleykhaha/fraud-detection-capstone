@@ -27,10 +27,13 @@ async def lifespan(app: FastAPI):
     app.state.models = {"brf": brf, "iso": iso, "lr": lr}
     app.state.test_data = load_test_data()
     app.state.scaler = joblib.load(os.path.join(os.getcwd(), "models", "scaler.joblib"))
+    with open(os.path.join(os.getcwd(), "data", "feature_order.txt"), "r") as f:
+        app.state.feature_order = [line.strip() for line in f.readlines()]
     yield
     app.state.models = None
     app.state.test_data = None
     app.state.scaler = None
+    app.state.feature_order = None
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -67,10 +70,10 @@ def ingest_transaction(transaction: Transaction):
     iso = app.state.models["iso"]
     lr = app.state.models["lr"]
     scaler = app.state.scaler
+    feature_order = app.state.feature_order[:-1]
 
     data = pd.DataFrame([transaction.model_dump(exclude={"fraud"})])
 
-    feature_order = getattr(scaler, "feature_names_in_", None)
     if feature_order is not None:
         missing = set(feature_order) - set(data.columns)
         if missing:
@@ -98,11 +101,11 @@ def test_models():
     iso = app.state.models["iso"]
     lr = app.state.models["lr"]
     scaler = app.state.scaler
+    feature_order = app.state.feature_order[:-1]
 
     X = df.drop(columns=["fraud"])
     y = df["fraud"].to_numpy()
 
-    feature_order = getattr(scaler, "feature_names_in_", None)
     if feature_order is not None:
         missing = set(feature_order) - set(X.columns)
         if missing:
@@ -112,7 +115,8 @@ def test_models():
     X = scaler.transform(X)
 
     brf_pred = brf.predict(X).astype(int)
-    iso_pred = int(iso.predict(X)[0] == -1)
+    iso_raw = iso.predict(X)
+    iso_pred = (iso_raw == -1).astype(int)
     lr_pred = lr.predict(X).astype(int)
 
     summaries = []
