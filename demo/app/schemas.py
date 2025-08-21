@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Any, Dict
 
 class Transaction(BaseModel):
     distance_from_home: float
@@ -15,6 +16,9 @@ class Result(BaseModel):
     iso: bool
     lr: bool
     true: bool
+    shap_brf: str
+    shap_iso: str
+    shap_lr: str
 
 class TestSummary(BaseModel):
     model: str

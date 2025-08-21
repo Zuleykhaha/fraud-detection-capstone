@@ -39,6 +39,7 @@
                 let resultsHtml = `<strong>True label:</strong> ${data.true ? "Fraudulent" : "Legit"}<br><br>`;
                 for (const key of ["brf", "iso", "lr"]) {
                     resultsHtml += `<strong>${modelNames[key]}:</strong> Predicted ${data[key] ? "Fraudulent" : "Legit"} &mdash; <span style="color:${data[key] === data.true ? 'green' : 'red'}">${data[key] === data.true ? "Correct" : "Incorrect"}</span><br>`;
+                    resultsHtml += `SHAP Values (sorted):<pre>${data[`shap_${key}`]}</pre>`;
                 }
                 resultsHtml += `<br><strong>Transaction Details:</strong><br><pre>${JSON.stringify(transaction, null, 2)}</pre>`;
                 document.getElementById('results').innerHTML = resultsHtml;

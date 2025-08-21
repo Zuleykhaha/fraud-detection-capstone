@@ -1,8 +1,10 @@
 import os
-from typing import List
+from typing import List, Dict, Any
 
 import joblib
 import pandas as pd
+import numpy as np
+import shap
 from sklearn.preprocessing import RobustScaler
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -10,6 +12,34 @@ from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas import Transaction, Result, TestSummary
+
+def _reindex(df: pd.DataFrame, order: List[str]) -> pd.DataFrame:
+    missing = set(order) - set(df.columns)
+    if missing:
+        raise ValueError(f"Missing features: {sorted(missing)}")
+    return df.reindex(columns=order)
+
+def _topk_from_exp(exp, feature_names: List[str], k: int = 8) -> Dict[str, Any]:
+    vals = exp.values[0][0] if np.ndim(exp.values[0]) > 1 else exp.values[0]
+    base_values = exp.base_values[0]
+    base = float(base_values[0] if np.ndim(base_values) else base_values)
+    features = np.array(feature_names)
+    idx = np.argsort(np.abs(vals))[::-1][:k]
+    return {
+        "base_value": base,
+        "features": [
+            {"name": features[i], "shap": float(vals[i])}
+            for i in idx
+        ],
+    }
+
+def _global_topk(exp, feature_names: List[str], k: int = 10) -> List[Dict[str, Any]]:
+    mean_abs = np.mean(np.abs(exp.values), axis=0)
+    idx = np.argsort(mean_abs)[::-1][:k]
+    return [
+        {"name": feature_names[i], "mean_abs_shap": float(mean_abs[i])}
+        for i in idx
+    ]
 
 def load_models():
     brf = joblib.load(os.path.join(os.getcwd(), "models", "balanced_random_forest_model.joblib"))
@@ -27,13 +57,24 @@ async def lifespan(app: FastAPI):
     app.state.models = {"brf": brf, "iso": iso, "lr": lr}
     app.state.test_data = load_test_data()
     app.state.scaler = joblib.load(os.path.join(os.getcwd(), "models", "scaler.joblib"))
+    app.state.background = {
+        "no_smote": pd.read_csv(os.path.join(os.getcwd(), "data", "no_smote_background.csv")),
+        "smote": pd.read_csv(os.path.join(os.getcwd(), "data", "smote_background.csv"))
+    }
     with open(os.path.join(os.getcwd(), "data", "feature_order.txt"), "r") as f:
         app.state.feature_order = [line.strip() for line in f.readlines()]
+    app.state.explainers = {
+        "brf": shap.Explainer(app.state.models["brf"], app.state.background["smote"]),
+        "iso": shap.Explainer(app.state.models["iso"], app.state.background["no_smote"]),
+        "lr": shap.Explainer(app.state.models["lr"], app.state.background["smote"])
+    }
     yield
     app.state.models = None
     app.state.test_data = None
     app.state.scaler = None
+    app.state.background = None
     app.state.feature_order = None
+    app.state.explainers = None
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
@@ -71,6 +112,7 @@ def ingest_transaction(transaction: Transaction):
     lr = app.state.models["lr"]
     scaler = app.state.scaler
     feature_order = app.state.feature_order[:-1]
+    explainers = app.state.explainers
 
     data = pd.DataFrame([transaction.model_dump(exclude={"fraud"})])
 
@@ -80,17 +122,46 @@ def ingest_transaction(transaction: Transaction):
             raise ValueError(f"Missing features in test set: {sorted(missing)}")
         data = data.reindex(columns=feature_order)
 
-    data = scaler.transform(data)
+    data = pd.DataFrame(scaler.transform(data), columns=feature_order)
 
     brf_pred = int(brf.predict(data)[0])
     iso_pred = int(iso.predict(data)[0] == -1)
     lr_pred = int(lr.predict(data)[0])
 
+    brf_exp = explainers["brf"](data)
+    iso_exp = explainers["iso"](data)
+    lr_exp = explainers["lr"](data)
+
+    shaps = {
+        "brf": _topk_from_exp(brf_exp, feature_order),
+        "iso": _topk_from_exp(iso_exp, feature_order),
+        "lr": _topk_from_exp(lr_exp, feature_order)
+    }
+
+    pos = {"brf": [], "iso": [], "lr": []}
+    neg = {"brf": [], "iso": [], "lr": []}
+
+    for key, value in shaps.items():
+        for feat in value["features"]:
+            if feat["shap"] > 0:
+                pos[key].append(feat["name"])
+            else:
+                neg[key].append(feat["name"])
+            pos[key].sort(key=lambda name: next(feat["shap"] for feat in value["features"] if feat["name"] == name), reverse=True)
+            neg[key].sort(key=lambda name: abs(next(feat["shap"] for feat in value["features"] if feat["name"] == name)), reverse=True)
+
+    shap_brf = "Indicates legit: " + "\n\t".join(neg["brf"]) + "\n\nIndicates fraud: " + "\n\t".join(pos["brf"])
+    shap_iso = "Indicates legit: " + "\n\t".join(pos["iso"]) + "\n\nIndicates fraud: " + "\n\t".join(neg["iso"])
+    shap_lr = "Indicates legit: " + "\n\t".join(neg["lr"]) + "\n\nIndicates fraud: " + "\n\t".join(pos["lr"])
+
     return Result(
         brf=bool(brf_pred),
         iso=bool(iso_pred),
         lr=bool(lr_pred),
-        true=transaction.fraud
+        true=transaction.fraud,
+        shap_brf=shap_brf,
+        shap_iso=shap_iso,
+        shap_lr=shap_lr
     )
 
 @app.post("/test", response_model=List[TestSummary])
