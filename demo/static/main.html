@@ -34,10 +34,11 @@
                 const modelNames = {
                     brf: "Balanced Random Forest",
                     iso: "Isolation Forest",
-                    lr: "Logistic Regression"
+                    lr: "Logistic Regression",
+                    xgb: "XGBoost"
                 };
                 let resultsHtml = `<strong>True label:</strong> ${data.true ? "Fraudulent" : "Legit"}<br><br>`;
-                for (const key of ["brf", "iso", "lr"]) {
+                for (const key of ["brf", "iso", "lr", "xgb"]) {
                     resultsHtml += `<strong>${modelNames[key]}:</strong> Predicted ${data[key] ? "Fraudulent" : "Legit"} &mdash; <span style="color:${data[key] === data.true ? 'green' : 'red'}">${data[key] === data.true ? "Correct" : "Incorrect"}</span><br>`;
                     resultsHtml += `SHAP Values (sorted):<pre>${data[`shap_${key}`]}</pre>`;
                 }
@@ -56,7 +57,8 @@
                 const modelNames = {
                     brf: "Balanced Random Forest",
                     iso: "Isolation Forest",
-                    lr: "Logistic Regression"
+                    lr: "Logistic Regression",
+                    xgb: "XGBoost"
                 };
                 let resultsHtml = "<strong>Full Test Results:</strong><br><br>";
                 data.forEach(result => {

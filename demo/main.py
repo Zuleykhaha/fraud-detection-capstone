@@ -13,12 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.schemas import Transaction, Result, TestSummary
 
-def _reindex(df: pd.DataFrame, order: List[str]) -> pd.DataFrame:
-    missing = set(order) - set(df.columns)
-    if missing:
-        raise ValueError(f"Missing features: {sorted(missing)}")
-    return df.reindex(columns=order)
-
 def _topk_from_exp(exp, feature_names: List[str], k: int = 8) -> Dict[str, Any]:
     vals = exp.values[0][0] if np.ndim(exp.values[0]) > 1 else exp.values[0]
     base_values = exp.base_values[0]
@@ -33,19 +27,12 @@ def _topk_from_exp(exp, feature_names: List[str], k: int = 8) -> Dict[str, Any]:
         ],
     }
 
-def _global_topk(exp, feature_names: List[str], k: int = 10) -> List[Dict[str, Any]]:
-    mean_abs = np.mean(np.abs(exp.values), axis=0)
-    idx = np.argsort(mean_abs)[::-1][:k]
-    return [
-        {"name": feature_names[i], "mean_abs_shap": float(mean_abs[i])}
-        for i in idx
-    ]
-
 def load_models():
     brf = joblib.load(os.path.join(os.getcwd(), "models", "balanced_random_forest_model.joblib"))
     iso = joblib.load(os.path.join(os.getcwd(), "models", "isolated_forest_model.joblib"))
     lr = joblib.load(os.path.join(os.getcwd(), "models", "logistic_regression_model.joblib"))
-    return brf, iso, lr
+    xgb = joblib.load(os.path.join(os.getcwd(), "models", "xgboost_model.joblib"))
+    return brf, iso, lr, xgb
 
 def load_test_data():
     df = pd.read_csv(os.path.join(os.getcwd(), "data", "test_data.csv"))
@@ -53,8 +40,8 @@ def load_test_data():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    brf, iso, lr = load_models()
-    app.state.models = {"brf": brf, "iso": iso, "lr": lr}
+    brf, iso, lr, xgb = load_models()
+    app.state.models = {"brf": brf, "iso": iso, "lr": lr, "xgb": xgb}
     app.state.test_data = load_test_data()
     app.state.scaler = joblib.load(os.path.join(os.getcwd(), "models", "scaler.joblib"))
     app.state.background = {
@@ -66,7 +53,8 @@ async def lifespan(app: FastAPI):
     app.state.explainers = {
         "brf": shap.Explainer(app.state.models["brf"], app.state.background["smote"]),
         "iso": shap.Explainer(app.state.models["iso"], app.state.background["no_smote"]),
-        "lr": shap.Explainer(app.state.models["lr"], app.state.background["smote"])
+        "lr": shap.Explainer(app.state.models["lr"], app.state.background["smote"]),
+        "xgb": shap.Explainer(app.state.models["xgb"], app.state.background["no_smote"])
     }
     yield
     app.state.models = None
@@ -110,6 +98,7 @@ def ingest_transaction(transaction: Transaction):
     brf = app.state.models["brf"]
     iso = app.state.models["iso"]
     lr = app.state.models["lr"]
+    xgb = app.state.models["xgb"]
     scaler = app.state.scaler
     feature_order = app.state.feature_order[:-1]
     explainers = app.state.explainers
@@ -127,19 +116,22 @@ def ingest_transaction(transaction: Transaction):
     brf_pred = int(brf.predict(data)[0])
     iso_pred = int(iso.predict(data)[0] == -1)
     lr_pred = int(lr.predict(data)[0])
+    xgb_pred = int(xgb.predict(data)[0])
 
     brf_exp = explainers["brf"](data)
     iso_exp = explainers["iso"](data)
     lr_exp = explainers["lr"](data)
+    xgb_exp = explainers["xgb"](data)
 
     shaps = {
         "brf": _topk_from_exp(brf_exp, feature_order),
         "iso": _topk_from_exp(iso_exp, feature_order),
-        "lr": _topk_from_exp(lr_exp, feature_order)
+        "lr": _topk_from_exp(lr_exp, feature_order),
+        "xgb": _topk_from_exp(xgb_exp, feature_order)
     }
 
-    pos = {"brf": [], "iso": [], "lr": []}
-    neg = {"brf": [], "iso": [], "lr": []}
+    pos = {"brf": [], "iso": [], "lr": [], "xgb": []}
+    neg = {"brf": [], "iso": [], "lr": [], "xgb": []}
 
     for key, value in shaps.items():
         for feat in value["features"]:
@@ -153,15 +145,18 @@ def ingest_transaction(transaction: Transaction):
     shap_brf = "Indicates legit: " + "\n\t".join(neg["brf"]) + "\n\nIndicates fraud: " + "\n\t".join(pos["brf"])
     shap_iso = "Indicates legit: " + "\n\t".join(pos["iso"]) + "\n\nIndicates fraud: " + "\n\t".join(neg["iso"])
     shap_lr = "Indicates legit: " + "\n\t".join(neg["lr"]) + "\n\nIndicates fraud: " + "\n\t".join(pos["lr"])
+    shap_xgb = "Indicates legit: " + "\n\t".join(neg["xgb"]) + "\n\nIndicates fraud: " + "\n\t".join(pos["xgb"])
 
     return Result(
         brf=bool(brf_pred),
         iso=bool(iso_pred),
         lr=bool(lr_pred),
+        xgb=bool(xgb_pred),
         true=transaction.fraud,
         shap_brf=shap_brf,
         shap_iso=shap_iso,
-        shap_lr=shap_lr
+        shap_lr=shap_lr,
+        shap_xgb=shap_xgb
     )
 
 @app.post("/test", response_model=List[TestSummary])
@@ -171,6 +166,7 @@ def test_models():
     brf = app.state.models["brf"]
     iso = app.state.models["iso"]
     lr = app.state.models["lr"]
+    xgb = app.state.models["xgb"]
     scaler = app.state.scaler
     feature_order = app.state.feature_order[:-1]
 
@@ -189,9 +185,10 @@ def test_models():
     iso_raw = iso.predict(X)
     iso_pred = (iso_raw == -1).astype(int)
     lr_pred = lr.predict(X).astype(int)
+    xgb_pred = xgb.predict(X).astype(int)
 
     summaries = []
-    for model_name, preds in [("brf", brf_pred), ("iso", iso_pred), ("lr", lr_pred)]:
+    for model_name, preds in [("brf", brf_pred), ("iso", iso_pred), ("lr", lr_pred), ("xgb", xgb_pred)]:
         accuracy = float((preds == y).mean())
         false_positives = int(((preds == 1) & (y == 0)).sum())
         missed_frauds = int(((preds == 0) & (y == 1)).sum())

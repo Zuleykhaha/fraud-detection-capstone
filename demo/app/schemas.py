@@ -15,10 +15,12 @@ class Result(BaseModel):
     brf: bool
     iso: bool
     lr: bool
+    xgb: bool
     true: bool
     shap_brf: str
     shap_iso: str
     shap_lr: str
+    shap_xgb: str
 
 class TestSummary(BaseModel):
     model: str
