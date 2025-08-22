@@ -34,14 +34,14 @@ credit-card-fraud-detection/
 
 ## 📌 Notes
 
-- All preprocessing steps are documented in `notebooks/preprocessing.ipynb`.
+- 
 - 
 
 ---
 
 ## 📬 Contact
 
-If you have any questions or feedback, feel free to contact us through GitHub or email.
+If you have any questions or feedback, feel free to contact us through email.
 
 ---
 

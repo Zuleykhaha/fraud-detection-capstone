@@ -5,3 +5,5 @@ imblearn
 ipykernel
 scipy
 xgboost
+matplotlib
+seaborn
