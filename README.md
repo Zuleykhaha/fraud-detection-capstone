@@ -15,10 +15,18 @@ This is our final-year capstone project focused on detecting fraudulent credit c
 ## 📁 Project Structure
 
 ```
-credit-card-fraud-detection/
-├── notebooks/             # Data preprocessing 
-├── results/               # models
-└── README.md              # This file
+fraud-detection-capstone/
+│
+├── demo/                # Demo API / prototype code (FastAPI, etc.)
+├── notebooks/           # Jupyter notebooks for model training and experiments
+├── results/             # Saved model results, metrics, and figures
+├── scripts/             # Python scripts for preprocessing, training, and evaluation
+│
+├── .gitignore           # Ignored files and folders
+├── README.md            # Project documentation
+├── package-lock.json    # Dependency lock file (Node.js related)
+├── package.json         # Node.js package information
+├── requirements.txt     # Python dependencies
 ```
 
 ---
