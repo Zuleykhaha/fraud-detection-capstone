@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fraud Detection Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 500px; margin: auto; }
+        button { margin: 10px 0; padding: 10px 20px; font-size: 16px; }
+        #results { margin-top: 30px; padding: 15px; border: 1px solid #ccc; min-height: 60px; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Fraud Detection Demo</h2>
+        <button onclick="uploadTransaction('legit')">Upload Legit Transaction</button><br>
+        <button onclick="uploadTransaction('fraud')">Upload Fraudulent Transaction</button><br>
+        <button onclick="runFullTest()">Run Full Test</button>
+        <div id="results">Results will appear here...</div>
+    </div>
+    <script>
+        async function uploadTransaction(type) {
+            document.getElementById('results').textContent = 'Uploading ' + (type === 'legit' ? 'legit' : 'fraudulent') + ' transaction...';
+            try {
+                const res = await fetch('/random-transaction?type=' + type);
+                const transaction = await res.json();
+                const response = await fetch('/ingest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(transaction)
+                });
+                const data = await response.json();
+                // data: { brf: bool, iso: bool, lr: bool, true: bool }
+                const modelNames = {
+                    brf: "Balanced Random Forest",
+                    iso: "Isolation Forest",
+                    lr: "Logistic Regression",
+                    xgb: "XGBoost"
+                };
+                let resultsHtml = `<strong>True label:</strong> ${data.true ? "Fraudulent" : "Legit"}<br><br>`;
+                for (const key of ["brf", "iso", "lr", "xgb"]) {
+                    resultsHtml += `<strong>${modelNames[key]}:</strong> Predicted ${data[key] ? "Fraudulent" : "Legit"} &mdash; <span style="color:${data[key] === data.true ? 'green' : 'red'}">${data[key] === data.true ? "Correct" : "Incorrect"}</span><br>`;
+                    resultsHtml += `SHAP Values (sorted):<pre>${data[`shap_${key}`]}</pre>`;
+                }
+                resultsHtml += `<br><strong>Transaction Details:</strong><br><pre>${JSON.stringify(transaction, null, 2)}</pre>`;
+                document.getElementById('results').innerHTML = resultsHtml;
+            } catch (err) {
+                document.getElementById('results').textContent = 'Error: ' + err;
+            }
+        }
+
+        async function runFullTest() {
+            document.getElementById('results').textContent = 'Running full test...';
+            try {
+                const response = await fetch('/test', { method: 'POST' });
+                const data = await response.json();
+                const modelNames = {
+                    brf: "Balanced Random Forest",
+                    iso: "Isolation Forest",
+                    lr: "Logistic Regression",
+                    xgb: "XGBoost"
+                };
+                let resultsHtml = "<strong>Full Test Results:</strong><br><br>";
+                data.forEach(result => {
+                    resultsHtml += `<strong>${modelNames[result.model] || result.model}:</strong><br>`;
+                    resultsHtml += `Accuracy: ${(result.accuracy * 100).toFixed(2)}%<br>`;
+                    resultsHtml += `Missed Frauds: ${result.missed_frauds}<br>`;
+                    resultsHtml += `Miss Percentage: ${(result.miss_percentage * 100).toFixed(2)}%<br>`;
+                    resultsHtml += `False Positives: ${result.false_positives}<br><br>`;
+                });
+                document.getElementById('results').innerHTML = resultsHtml;
+            } catch (err) {
+                document.getElementById('results').textContent = 'Error: ' + err;
+            }
+        }
+    </script>
+</body>
+</html>

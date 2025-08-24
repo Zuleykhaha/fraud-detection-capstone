@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import RobustScaler
 from imblearn.over_sampling import SMOTE
@@ -18,13 +19,6 @@ def split_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         stratify=df["fraud"]
     )
     return train_df, test_df
-
-def scale_data(df: pd.DataFrame) -> pd.DataFrame:
-    scaler = RobustScaler()
-    scaled_features = scaler.fit_transform(df.drop(columns=["fraud"]))
-    scaled_df = pd.DataFrame(scaled_features, columns=df.columns[:-1])
-    scaled_df["fraud"] = df["fraud"].values
-    return scaled_df
 
 def balance_data(df: pd.DataFrame) -> pd.DataFrame:
     X = df.drop(columns=["fraud"])
@@ -53,17 +47,30 @@ def main() -> None:
         print("PLease ensure the data file is at ../data/original/card_transdata.csv")
         return
     
+    out_dir_train = os.path.join(project_root, "data", "training")
+    out_dir_test = os.path.join(project_root, "data", "testing")
+    out_dir_results = os.path.join(project_root, "results")
+    os.makedirs(out_dir_train, exist_ok=True)
+    os.makedirs(out_dir_test, exist_ok=True)
+    os.makedirs(out_dir_results, exist_ok=True)
+
     train_df, test_df = split_data(df)
-    train_df = scale_data(train_df)
-    test_df = scale_data(test_df)
+    feature_order = train_df.columns.tolist()
+    with open(os.path.join(out_dir_results, "feature_order.txt"), "w") as f:
+        for feature in feature_order:
+            f.write(f"{feature}\n")
+            
+    scaler = RobustScaler()
+    train_y = train_df["fraud"].values
+    train_df = pd.DataFrame(scaler.fit_transform(train_df.drop(columns=["fraud"])), columns=train_df.columns[:-1])
+    train_df["fraud"] = train_y
+    test_df.to_csv(os.path.join(out_dir_test, "unscaled_testing.csv"), index=False)
+    test_y = test_df["fraud"].values
+    test_df = pd.DataFrame(scaler.transform(test_df.drop(columns=["fraud"])), columns=test_df.columns[:-1])
+    test_df["fraud"] = test_y
 
     ad_train_df = train_df.copy()
     brf_train_df = balance_data(train_df)
-
-    out_dir_train = os.path.join(project_root, "data", "training")
-    out_dir_test = os.path.join(project_root, "data", "testing")
-    os.makedirs(out_dir_train, exist_ok=True)
-    os.makedirs(out_dir_test, exist_ok=True)
 
     ad_train_df.to_csv(os.path.join(out_dir_train, "final_anomaly_training.csv"), index=False)
     brf_train_df.to_csv(os.path.join(out_dir_train, "final_brf_training.csv"), index=False)
@@ -72,6 +79,8 @@ def main() -> None:
     heldout_df, test_df = split_data(test_df)
     heldout_df.to_csv(os.path.join(out_dir_test, "final_heldout_testing.csv"), index=False)
     test_df.to_csv(os.path.join(out_dir_test, "final_split_testing.csv"), index=False)
+
+    joblib.dump(scaler, os.path.join(out_dir_results, "scaler.joblib"))
 
     print("Data preprocessing completed successfully.")
 
