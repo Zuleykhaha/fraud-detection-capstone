@@ -30,12 +30,6 @@ credit-card-fraud-detection/
 - **File used:** `card_transdata.csv`
 - Contains anonymized transaction data with class imbalance between normal and fraudulent transactions.
 
----
-
-## 📌 Notes
-
-- 
-- 
 
 ---
 
