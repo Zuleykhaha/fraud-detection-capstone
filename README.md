@@ -22,10 +22,10 @@ fraud-detection-capstone/
 ├── results/             # Saved model results, metrics, and figures
 ├── scripts/             # Python scripts for preprocessing, training, and evaluation
 │
-├── .gitignore           # Ignored files and folders
+├── .gitignore          
 ├── README.md            # Project documentation
-├── package-lock.json    # Dependency lock file (Node.js related)
-├── package.json         # Node.js package information
+├── package-lock.json    
+├── package.json         
 ├── requirements.txt     # Python dependencies
 ```
 
