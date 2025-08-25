@@ -38,6 +38,27 @@ fraud-detection-capstone/
 - **File used:** `card_transdata.csv`
 - Contains anonymized transaction data with class imbalance between normal and fraudulent transactions.
 
+---
+
+## 🚀 Demo
+
+To run the demo, follow these steps:
+1. **Dataset:** Ensure the above dataset is stored at ./data/card_transdata.csv
+2. **Preprocessing:** Run the preprocessing script using:
+```bash
+python ./scripts/preprocessing.py
+```
+3. **Model Training:** Within ./notebooks/, run all the cells within each Jupyter Notebook, except for preprocessing.ipynb
+4. **Demo Prep:** To prepare all files for the demo, run:
+```bash
+python ./scripts/prep_demo_files.py
+```
+5. **Run:** Using the terminal, enter the demo folder and run the API:
+```bash
+cd demo
+uvicorn main:app --host 0.0.0.0 --port 8080
+```
+6. **Access:** The demo page can be access at http://localhost:8080/home
 
 ---
 
